@@ -43,8 +43,8 @@ if __name__ == '__main__':
     v = numpy.array([1, 0, -1])
     krnl_x = h*v
     krnl_y = krnl_x.T
-    Gx = convolve2d(image, krnl_x)
-    Gy = convolve2d(image, krnl_y)
+    Gx = convolve2d(image, krnl_x, mode='same')
+    Gy = convolve2d(image, krnl_y, mode='same')
     gausfitX = gaussian_filter(Gx, 0.5)
     gausfitY = gaussian_filter(Gy, 0.5)
     G_X = numpy.array(Gx) + (numpy.array(Gx) - numpy.array(gausfitX)) * 0.1
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     Gmag, Gdir = imgradient(G_X, G_Y)
     Gmag[Gmag > 0] = 1.0
     Gmag[Gmag <= 0] = 0.0
-    Amg = gaussian_filter(Gmag, 2)
+    Amg = gaussian_filter(Gmag, 1)
     fuse = blendImage(G_X, G_Y)
     Am = fuse-(fuse-gaussian_filter(fuse, 2))
 
@@ -63,8 +63,7 @@ if __name__ == '__main__':
     plt.imshow(image_resized)
     plt.show()
     
-    hh = numpy.zeros((Am.shape))
-    hh[1:-1,1:-1] = image*255
+    hh = image*255
 #    hh = hh.astype('uint8')
     jj = Am*255
 #    jj = jj.astype('uint8')
