@@ -36,8 +36,8 @@ if __name__ == '__main__':
             m = 1000.0/col
         else:
             m = 1
-    image = imresize(image, m)
-    image = rgb2gray(image)
+    image_resized = imresize(image, m)
+    image = rgb2gray(image_resized)
     image = cv2.normalize(image.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
     krnl_x = [[1, 0, -1]]
     krnl_y = [[1], [0], [-1]]
@@ -58,6 +58,9 @@ if __name__ == '__main__':
     fuse = blendImage(G_X, G_Y)
     Am = fuse-(fuse-gaussian_filter(fuse, 2))
 
-    plt.figure(0)
+    fig = plt.figure()
+    fig.add_subplot(1,2,1)
     plt.imshow(Am)
+    fig.add_subplot(1, 2, 2)
+    plt.imshow(image_resized)
     plt.show()
