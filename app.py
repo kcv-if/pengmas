@@ -14,14 +14,54 @@ def imgradient(gx, gy):
     return magnitude, angle
 
 def blendImage(image1, image2):
-    newimage = image1
-    for x in range(len(image1)):
-        for y in range(len(image1[x])):
-            newimage[x][y] = (image1[x][y]+image2[x][y])/2
-    return newimage
+    newImage = (image1 + image2)/2.0
+    return newImage
 
 def conv2(x, y, mode='same'):
     return numpy.rot90(convolve2d(numpy.rot90(x, 2), numpy.rot90(y, 2), mode=mode), 2)
+
+def savecontoh(hasil, asli, flname='hasil1.jpg'):
+    hh = asli*255
+    jj = hasil*255
+    jj = 255 - jj
+    img_hasil = numpy.vstack((jj, hh))
+    cv2.imwrite(flname, img_hasil)
+    
+def trianglemesh(Am, Amg, fuse):
+    scl = 30
+    fid = open('result.obj', 'w')
+    towrite = ''
+    med = numpy.median(fuse)
+    minim = numpy.min(fuse)
+    rows, columns = fuse.shape
+    for a in range(rows):
+        for b in range(columns):
+            if Amg[a][b] < 0.99:
+                t = Amg[a][b]
+                f = t*med/255*scl
+            elif Am[a][b] > med:
+                t = med - (Am[a][b] - med)
+                f = t/255*scl
+            else:
+                t = Am[a][b]
+                f = t/255*scl
+            towrite += 'v {} {} {}\r\n'.format(a+1, b+1, f)
+    towrite += 's 1\r\n'
+    
+    x = rows*columns
+    for d in range(1, x+1):
+        if d/columns <= rows-1:
+            if (d+columns) % 2 != 0 and d % columns != 0:
+                towrite += 'f {} {} {}\r\n'.format(d, d+1, columns + d)
+            if (d+columns) % 2 != 0 and (d+columns) % columns != 1:
+                towrite += 'f {} {} {}\r\n'.format(d, d-1, columns+d)
+            if (d+columns) % 2 == 0 and d % columns != 1:
+                towrite += 'f {} {} {}\r\n'.format(d, columns+d, columns+d-1)
+            if (d+columns) % 2 == 0 and d % columns != 0:
+                towrite += 'f {} {} {}\r\n'.format(d, columns+d, columns+d+1)
+    fid.write(towrite)
+    fid.close()
+    del towrite
 
 if __name__ == '__main__':
     image = cv2.imread('ship.jpg')
@@ -63,9 +103,4 @@ if __name__ == '__main__':
     plt.imshow(image_resized)
     plt.show()
     
-    hh = image*255
-#    hh = hh.astype('uint8')
-    jj = Am*255
-#    jj = jj.astype('uint8')
-    img_hasil = numpy.vstack((jj, hh))
-    cv2.imwrite('hasil1.jpg', img_hasil)
+    
