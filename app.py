@@ -39,21 +39,19 @@ if __name__ == '__main__':
     image_resized = imresize(image, m)
     image = rgb2gray(image_resized)
     image = cv2.normalize(image.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
-    krnl_x = [[1, 0, -1]]
-    krnl_y = [[1], [0], [-1]]
-    Gx = conv2(image, krnl_x)
-    Gy = conv2(image, krnl_y)
+    h = numpy.array([[1], [2], [1]])
+    v = numpy.array([1, 0, -1])
+    krnl_x = h*v
+    krnl_y = krnl_x.T
+    Gx = convolve2d(image, krnl_x)
+    Gy = convolve2d(image, krnl_y)
     gausfitX = gaussian_filter(Gx, 0.5)
     gausfitY = gaussian_filter(Gy, 0.5)
     G_X = numpy.array(Gx) + (numpy.array(Gx) - numpy.array(gausfitX)) * 0.1
     G_Y = numpy.array(Gy) + (numpy.array(Gy) - numpy.array(gausfitY)) * 0.1
     Gmag, Gdir = imgradient(G_X, G_Y)
-    for x in range(len(Gmag)):
-        for y in range(len(Gmag[x])):
-            if Gmag[x][y] > 0:
-                Gmag[x][y] = float(1)
-            else:
-                Gmag[x][y] = float(0)
+    Gmag[Gmag > 0] = 1.0
+    Gmag[Gmag <= 0] = 0.0
     Amg = gaussian_filter(Gmag, 2)
     fuse = blendImage(G_X, G_Y)
     Am = fuse-(fuse-gaussian_filter(fuse, 2))
