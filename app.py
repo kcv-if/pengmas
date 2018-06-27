@@ -4,6 +4,7 @@ from scipy.signal import convolve2d
 from scipy.ndimage.filters import gaussian_filter
 import matplotlib.pyplot as plt
 import cv2, numpy
+from tqdm import tqdm
 
 def imgradient(gx, gy):
     sobelx = cv2.Sobel(gx, cv2.CV_64F,1,0)
@@ -49,7 +50,7 @@ def trianglemesh(Am, Amg, fuse):
     towrite += 's 1\r\n'
     
     x = rows*columns
-    for d in range(1, x+1):
+    for d in tqdm(range(1, x+1)):
         if d/columns <= rows-1:
             if (d+columns) % 2 != 0 and d % columns != 0:
                 towrite += 'f {} {} {}\r\n'.format(d, d+1, columns + d)
