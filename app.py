@@ -24,7 +24,7 @@ def conv2(x, y, mode='same'):
     return numpy.rot90(convolve2d(numpy.rot90(x, 2), numpy.rot90(y, 2), mode=mode), 2)
 
 if __name__ == '__main__':
-    image = cv2.imread('test.png')
+    image = cv2.imread('ship.jpg')
     row, col, channel = image.shape
     if row > col:
         if row > 1000:
@@ -38,7 +38,7 @@ if __name__ == '__main__':
             m = 1
     image_resized = imresize(image, m)
     image = rgb2gray(image_resized)
-    image = cv2.normalize(image.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
+#    image = cv2.normalize(image.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
     h = numpy.array([[1], [2], [1]])
     v = numpy.array([1, 0, -1])
     krnl_x = h*v
@@ -62,3 +62,11 @@ if __name__ == '__main__':
     fig.add_subplot(1, 2, 2)
     plt.imshow(image_resized)
     plt.show()
+    
+    hh = numpy.zeros((Am.shape))
+    hh[1:-1,1:-1] = image*255
+#    hh = hh.astype('uint8')
+    jj = Am*255
+#    jj = jj.astype('uint8')
+    img_hasil = numpy.vstack((jj, hh))
+    cv2.imwrite('hasil1.jpg', img_hasil)
