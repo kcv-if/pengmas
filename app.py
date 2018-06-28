@@ -23,19 +23,18 @@ def conv2(x, y, mode='same'):
 
 def savecontoh(hasil, asli, flname='hasil1.jpg'):
     hh = asli*255
-    jj = hasil*255
-    jj = 255 - jj
+    jj = (hasil - hasil.min()) / (hasil.max()-hasil.min()) *255 #normalize to 0-255
     img_hasil = numpy.vstack((jj, hh))
     cv2.imwrite(flname, img_hasil)
     
 def trianglemesh(Am, Amg, fuse):
     scl = 30
-    fid = open('result.obj', 'w')
+    fid = open('result1.obj', 'w')
     towrite = ''
     med = numpy.median(fuse)
     minim = numpy.min(fuse)
     rows, columns = fuse.shape
-    for a in range(rows):
+    for a in tqdm(range(rows)):
         for b in range(columns):
             if Amg[a][b] < 0.99:
                 t = Amg[a][b]
@@ -46,20 +45,20 @@ def trianglemesh(Am, Amg, fuse):
             else:
                 t = Am[a][b]
                 f = t/255*scl
-            towrite += 'v {} {} {}\r\n'.format(a+1, b+1, f)
-    towrite += 's 1\r\n'
+            towrite += 'v {} {} {}\n'.format(a+1, b+1, f)
+    towrite += 's 1\n'
     
     x = rows*columns
     for d in tqdm(range(1, x+1)):
         if d/columns <= rows-1:
             if (d+columns) % 2 != 0 and d % columns != 0:
-                towrite += 'f {} {} {}\r\n'.format(d, d+1, columns + d)
+                towrite += 'f {} {} {}\n'.format(d, d+1, columns + d)
             if (d+columns) % 2 != 0 and (d+columns) % columns != 1:
-                towrite += 'f {} {} {}\r\n'.format(d, d-1, columns+d)
+                towrite += 'f {} {} {}\n'.format(d, d-1, columns+d)
             if (d+columns) % 2 == 0 and d % columns != 1:
-                towrite += 'f {} {} {}\r\n'.format(d, columns+d, columns+d-1)
+                towrite += 'f {} {} {}\n'.format(d, columns+d, columns+d-1)
             if (d+columns) % 2 == 0 and d % columns != 0:
-                towrite += 'f {} {} {}\r\n'.format(d, columns+d, columns+d+1)
+                towrite += 'f {} {} {}\n'.format(d, columns+d, columns+d+1)
     fid.write(towrite)
     fid.close()
     del towrite
@@ -78,7 +77,7 @@ if __name__ == '__main__':
         else:
             m = 1
     image_resized = imresize(image, m)
-    image = rgb2gray(image_resized)
+    image = cv2.cvtColor(image_resized, cv2.COLOR_BGR2GRAY)
 #    image = cv2.normalize(image.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
     h = numpy.array([[1], [2], [1]])
     v = numpy.array([1, 0, -1])
@@ -88,18 +87,18 @@ if __name__ == '__main__':
     Gy = convolve2d(image, krnl_y, mode='same')
     gausfitX = gaussian_filter(Gx, 0.5)
     gausfitY = gaussian_filter(Gy, 0.5)
-    G_X = numpy.array(Gx) + (numpy.array(Gx) - numpy.array(gausfitX)) * 0.1
-    G_Y = numpy.array(Gy) + (numpy.array(Gy) - numpy.array(gausfitY)) * 0.1
+    G_X = Gx + (Gx - gausfitX) * 0.1
+    G_Y = Gy + (Gy - gausfitY) * 0.1
     Gmag, Gdir = imgradient(G_X, G_Y)
     Gmag[Gmag > 0] = 1.0
     Gmag[Gmag <= 0] = 0.0
-    Amg = gaussian_filter(Gmag, 1)
+    Amg = gaussian_filter(Gmag, 0.5)
     fuse = blendImage(G_X, G_Y)
-    Am = fuse-(fuse-gaussian_filter(fuse, 2))
+    Am = fuse-(fuse-gaussian_filter(fuse, 0.5))
 
     fig = plt.figure()
     fig.add_subplot(1,2,1)
-    plt.imshow(Am)
+    plt.imshow(Am, cmap = 'gray')
     fig.add_subplot(1, 2, 2)
     plt.imshow(image_resized)
     plt.show()
