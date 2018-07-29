@@ -1,14 +1,15 @@
-import cv2
+import cv2, sys, os
 import numpy as np
+from scipy.misc import imresize
+from tqdm import trange
 
-def create3D(image):
-    fid = open('result4.obj', 'w')
+def create3D(greyed, image_name):
+    fid = open('result_{}.obj'.format(image_name), 'w')
     scl = 20
-    greyed = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     med = np.median(greyed) #np.max(greyed) kalau mau timbul
     rows, columns = greyed.shape
     counter = 0
-    for a in range(rows):
+    for a in trange(rows, desc='create vertex'):
         for b in range(columns):
             if greyed[a][b] < 0.99:
                 t = greyed[a][b]
@@ -22,10 +23,8 @@ def create3D(image):
             fid.write('v {} {} {}\n'.format(a+1, b+1, f))
             counter = counter + 1
     fid.write('s 1\n')
-
     x = rows * columns
-    print(x, counter)
-    for d in range(1, x+1):
+    for d in trange(1, x+1, desc='create triangle mesh'):
         if d+columns+1 <= x:
             if d%2==1 and d%columns!=0:
                 fid.write('f {} {} {}\n'.format(d, d+1, d + columns))
@@ -36,31 +35,56 @@ def create3D(image):
             if d%2==0 and d%columns!=0:
                 fid.write('f {} {} {}\n'.format(d, d+columns, d+columns+1))
     fid.close()
+    print('result_{}.obj created'.format(image_name))
 
-image = cv2.imread("test4.jpg")
-copy = image.copy()
+def process_image(image_object, image_name):
+    copied = image_object.copy()
+    edged = cv2.Canny(copied, 10, 250)
+    cv2.imshow('edged', edged)
+    kernel = np.ones((5, 5), np.uint8)
+    dilation = cv2.dilate(edged, kernel, iterations=1)
+    cv2.imshow('dilation', dilation)
+    closing = cv2.morphologyEx(dilation, cv2.MORPH_CLOSE, kernel)
+    cv2.imshow('closing', closing)
+    (image, cnts, hiers) = cv2.findContours(closing, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cont = cv2.drawContours(copied, cnts, -1, (0, 0, 0), 1, cv2.LINE_AA)
+    cv2.imshow('contour', cont)
+    mask = np.zeros(cont.shape[:2], dtype="uint8") * 255
+    cv2.drawContours(mask, cnts, -1, (255, 255, 255), -1)
+    img = cv2.bitwise_and(cont, cont, mask=mask)
+    cv2.imshow('masked', img)
+    for c in cnts:
+        x, y, w, h = cv2.boundingRect(c)
+        if w > 50 and h > 130:
+            new_img = img[y:y + h, x:x + w]
+            cv2.imwrite('cropped_{}.png'.format(image_name), new_img)
+            cv2.waitKey(0)
+            print('cropped_{}.png created'.format(image_name))
+            return new_img
 
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-# cv2.imshow('Gray', gray)
-edged = cv2.Canny(gray, 10, 250)
-# cv2.imshow('Edged', edged)
-kernel = np.ones((5, 5), np.uint8)
-dilation = cv2.dilate(edged, kernel, iterations=1)
-# cv2.imshow('Dilation', dilation)
-closing = cv2.morphologyEx(dilation, cv2.MORPH_CLOSE, kernel)
-# cv2.imshow('Closing', closing)
-(image, cnts, hiers) = cv2.findContours(closing, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-cont = cv2.drawContours(copy, cnts, -1, (0, 0, 0), 1, cv2.LINE_AA)
-# cv2.imshow('Contours', cont)
-mask = np.zeros(cont.shape[:2], dtype="uint8") * 255
-# Draw the contours on the mask
-cv2.drawContours(mask, cnts, -1, (255, 255, 255), -1)
-# remove the contours from the image and show the resulting images
-img = cv2.bitwise_and(cont, cont, mask=mask)
-# cv2.imshow("Mask", img)
-for c in cnts:
-    x, y, w, h = cv2.boundingRect(c)
-    if w > 50 and h > 130:
-        new_img = img[y:y + h, x:x + w]
-        cv2.imwrite('Cropped4.png', new_img)
-        create3D(new_img)
+if __name__ == '__main__':
+    image_path = sys.argv[1:]
+    if len(image_path) == 0:
+        print('please insert image file name, ex: python app.py [image1] [image2] [image3]....')
+        exit()
+    for individual in image_path:
+        image_name = os.path.basename(individual)
+        image_object = cv2.imread(individual,0)
+        if image_object is None:
+            print('{} is not an image file'.format(image_name))
+            exit()
+        row, col = image_object.shape
+        if row > col:
+            if row > 1000:
+                m = 1000.0/row
+            else:
+                m = 1
+        else:
+            if col > 1000:
+                m = 1000.0/col
+            else:
+                m = 1
+        resized_image = imresize(image_object, m)
+        new_image = process_image(resized_image, image_name.split('.')[0])
+        create3D(new_image, image_name.split('.')[0])
+        print('\n')
