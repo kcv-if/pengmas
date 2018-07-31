@@ -78,12 +78,12 @@ if __name__ == '__main__':
             if row > 1000:
                 m = 1000.0/row
             else:
-                m = 1
+                m = 1.0
         else:
             if col > 1000:
                 m = 1000.0/col
             else:
-                m = 1
+                m = 1.0
         resized_image = imresize(image_object, m)
         new_image = process_image(resized_image, image_name.split('.')[0])
         if new_image is not None:
