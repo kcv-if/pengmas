@@ -4,7 +4,7 @@ from scipy.misc import imresize
 from tqdm import trange
 
 def create3D(greyed, image_name):
-    fid = open('result_{}.obj'.format(image_name), 'w')
+    fid = open('3d_data/result_{}.obj'.format(image_name), 'w')
     scl = 20 #ngatur ketinggian
     med = np.max(greyed) #np.max(greyed) kalau mau timbul, np.median(greyed) kalau cekung
     rows, columns = greyed.shape
@@ -58,9 +58,24 @@ def process_image(image_object, image_name):
         if w > 50 and h > 130:
             new_img = img[y:y + h, x:x + w]
     if new_img is not None:
-        cv2.imwrite('cropped_{}.png'.format(image_name), new_img)
+        cv2.imwrite('cropped_image/cropped_{}.png'.format(image_name), new_img)
         print('cropped_{}.png created'.format(image_name))
     return new_img
+
+def resize_image(images):
+    row, col = images.shape
+    if row > col:
+        if row > 1000:
+            m = 1000.0 / row
+        else:
+            m = 1.0
+    else:
+        if col > 1000:
+            m = 1000.0 / col
+        else:
+            m = 1.0
+    resized_image = imresize(images, m)
+    return resized_image
 
 if __name__ == '__main__':
     image_path = sys.argv[1:]
@@ -73,22 +88,12 @@ if __name__ == '__main__':
         if image_object is None:
             print('{} is not an image file'.format(image_name))
             exit()
-        row, col = image_object.shape
-        if row > col:
-            if row > 1000:
-                m = 1000.0/row
-            else:
-                m = 1.0
-        else:
-            if col > 1000:
-                m = 1000.0/col
-            else:
-                m = 1.0
-        resized_image = imresize(image_object, m)
-        new_image = process_image(resized_image, image_name.split('.')[0])
+        new_image = process_image(image_object, image_name.split('.')[0])
         if new_image is not None:
-            create3D(new_image, image_name.split('.')[0])
+            resized_image = resize_image(new_image)
+            create3D(resized_image, image_name.split('.')[0])
         else:
             print('image processing failed, create 3d from original image')
+            resized_image = resize_image(image_object)
             create3D(resized_image, image_name.split('.')[0])
         print('\n')
