@@ -25,7 +25,7 @@ def create3D(greyed, image_name):
             fid.write('v {} {} {}\n'.format(a+1, b+1, f))
     for a in range(rows):
         for b in range(columns):
-            fid.write('v {} {} {}\n'.format(a+1, b+1, deepest-20))
+            fid.write('v {} {} {}\n'.format(a+1, b+1, deepest-50))
     fid.write('s 1\n')
     x = rows * columns
     for d in trange(1, x+1, desc='create triangle mesh'):
@@ -36,25 +36,30 @@ def create3D(greyed, image_name):
                 fid.write('f {} {} {}\n'.format(y, y + 1, y + columns))
                 fid.write('f {} {} {}\n'.format(d, d+1, d+1+x))
                 fid.write('f {} {} {}\n'.format(d, d+x, d+1+x))
-                fid.write('f {} {} {}\n'.format(d, d+columns, d+x+columns))
             if d%2==1 and (d+columns)%columns != 1:
                 fid.write('f {} {} {}\n'.format(d, d-1, d+columns))
                 fid.write('f {} {} {}\n'.format(y, y - 1, y + columns))
                 fid.write('f {} {} {}\n'.format(d, d-1, d-1+x))
                 fid.write('f {} {} {}\n'.format(d, d+x, d-1+x))
-                fid.write('f {} {} {}\n'.format(d, d+x, d+x+columns))
             if d%2==0 and (d+columns)%columns !=1:
                 fid.write('f {} {} {}\n'.format(d, d+columns-1, d+columns))
                 fid.write('f {} {} {}\n'.format(y, y + columns - 1, y + columns))
                 fid.write('f {} {} {}\n'.format(d, d-1+columns, d+x-1+columns))
                 fid.write('f {} {} {}\n'.format(d, d+x, d+x-1+columns))
-                fid.write('f {} {} {}\n'.format(d, d+columns, d+x+columns))
             if d%2==0 and d%columns!=0:
                 fid.write('f {} {} {}\n'.format(d, d+columns, d+columns+1))
                 fid.write('f {} {} {}\n'.format(y, y + columns, y + columns + 1))
                 fid.write('f {} {} {}\n'.format(d, d+1+columns, d+x+1+columns))
                 fid.write('f {} {} {}\n'.format(d, d+x, d+x+1+columns))
-                fid.write('f {} {} {}\n'.format(d, d+x, d+x+columns))
+            fid.write('f {} {} {}\n'.format(d, d+columns, d+x-1+columns))
+            fid.write('f {} {} {}\n'.format(d, d+x, d+x+columns))
+        else:
+            if d%2==1 and d%columns!=0:
+                fid.write('f {} {} {}\n'.format(d, d+1, d+1+x))
+                fid.write('f {} {} {}\n'.format(d, d+x, d+1+x))
+            if d%2==1 and (d+columns)%columns != 1:
+                fid.write('f {} {} {}\n'.format(d, d-1, d-1+x))
+                fid.write('f {} {} {}\n'.format(d, d+x, d-1+x))
     fid.close()
     print('result_{}.obj created'.format(image_name))
 
